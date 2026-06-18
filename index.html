@@ -202,15 +202,61 @@
       background: #ecfdf5;
       color: #059669;
     }
+    .badge-attraction {
+      background: #fef3c7;
+      color: #b45309;
+    }
     .stop-card.free-stop {
       border-left: 4px solid #059669;
+    }
+    .stop-card.attraction {
+      border-left: 4px solid #f59e0b;
     }
     .dot-start { background: #16a34a; }
     .dot-overnight { background: #2563eb; }
     .dot-dog { background: #9333ea; }
     .dot-end { background: #dc2626; }
     .dot-free { background: #059669; }
+    .dot-attraction { background: #f59e0b; }
     .route-line { width: 20px; height: 4px; border-radius: 2px; background: #2563eb; }
+
+    /* Tips/Reminders Section */
+    .tips-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+    .tips-header {
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--warning);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--warning);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tips-body {
+      padding: 14px 16px;
+    }
+    .tip-item {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .tip-item:last-child { margin-bottom: 0; }
+    .tip-icon {
+      flex-shrink: 0;
+      font-size: 16px;
+    }
 
     @media (min-width: 768px) {
       .app-layout {
@@ -355,6 +401,7 @@
     <div class="stat"><span class="stat-label">Drive Time</span><span class="stat-value">~24 hrs</span></div>
     <div class="stat"><span class="stat-label">Days</span><span class="stat-value">2</span></div>
     <div class="stat"><span class="stat-label">Dog Stops</span><span class="stat-value">5</span></div>
+    <div class="stat"><span class="stat-label">Attractions</span><span class="stat-value">3</span></div>
   </div>
 
   <div class="app-layout">
@@ -365,6 +412,7 @@
         <div class="legend-item"><div class="legend-dot dot-overnight"></div> Overnight (Paid)</div>
         <div class="legend-item"><div class="legend-dot dot-free"></div> Overnight (Free)</div>
         <div class="legend-item"><div class="legend-dot dot-dog"></div> Dog-Friendly</div>
+        <div class="legend-item"><div class="legend-dot dot-attraction"></div> Things to See</div>
         <div class="legend-item"><div class="route-line"></div> Route</div>
       </div>
       <div class="itinerary" id="itinerary"></div>
@@ -451,6 +499,19 @@
         free: true
       },
       {
+        id: 'shoshone-falls',
+        name: '⭐ Shoshone Falls ("Niagara of the West")',
+        type: 'attraction',
+        lat: 42.5930,
+        lng: -114.3998,
+        day: 2,
+        time: 'Saturday ~8:30 AM (before departing Twin Falls)',
+        details: 'Only 5 min from Twin Falls. 212-ft waterfall, taller than Niagara. Dogs welcome on leash. Great morning walk. $5 vehicle entry. Best flow in June!',
+        cumMiles: 565,
+        dog: true,
+        attraction: true
+      },
+      {
         id: 'slc',
         name: 'Salt Lake City (I-15 Corridor)',
         type: 'fuel',
@@ -514,6 +575,19 @@
         dog: true
       },
       {
+        id: 'snow-canyon',
+        name: '⭐ Snow Canyon State Park',
+        type: 'attraction',
+        lat: 37.2000,
+        lng: -113.6350,
+        day: 2,
+        time: 'Saturday ~4:45 PM (quick detour from St. George)',
+        details: '10 min from St. George. Stunning red rock + black lava formations. Dogs on leash on Whiptail Trail (easy, 30 min). $10 vehicle entry. Worth the stop!',
+        cumMiles: 1135,
+        dog: true,
+        attraction: true
+      },
+      {
         id: 'flagstaff',
         name: 'Flagstaff Rest Area (I-17)',
         type: 'break',
@@ -524,6 +598,19 @@
         details: 'Final dog break before Mesa. Rest area with pet walking zone. Only 150 miles to go!',
         cumMiles: 1310,
         dog: true
+      },
+      {
+        id: 'sedona',
+        name: '⭐ Sedona / Oak Creek Canyon Overlook',
+        type: 'attraction',
+        lat: 34.8697,
+        lng: -111.7610,
+        day: 2,
+        time: 'Saturday ~9:15 PM (sunset detour, 20 min off I-17)',
+        details: 'Take Exit 298 (AZ-179). Iconic red rock views. Dogs welcome on Bell Rock Pathway (easy, paved). If it is dark, skip and visit on a future trip. Adds ~30 min.',
+        cumMiles: 1340,
+        dog: true,
+        attraction: true
       },
       {
         id: 'mesa',
@@ -605,6 +692,7 @@
       end: createIcon('#dc2626', '🏁'),
       overnight: createIcon('#2563eb', '🛏️'),
       free: createIcon('#059669', '🅿️'),
+      attraction: createIcon('#f59e0b', '⭐'),
       dog: createIcon('#9333ea', '🐕'),
       fuel: createIcon('#ea580c', '⛽'),
       break: createIcon('#9333ea', '🐕')
@@ -613,7 +701,8 @@
     // Add markers
     stops.forEach(stop => {
       let icon = icons[stop.type];
-      if (stop.free && stop.overnight) icon = icons.free;
+      if (stop.attraction) icon = icons.attraction;
+      else if (stop.free && stop.overnight) icon = icons.free;
       else if (stop.overnight) icon = icons.overnight;
       else if (stop.dog) icon = icons.dog;
 
@@ -646,12 +735,14 @@
 
       const card = document.createElement('div');
       let cardClass = 'stop-card';
-      if (stop.free) cardClass += ' free-stop';
+      if (stop.attraction) cardClass += ' attraction';
+      else if (stop.free) cardClass += ' free-stop';
       else if (stop.dog) cardClass += ' dog-friendly';
       if (stop.overnight && !stop.free) cardClass += ' overnight';
       card.className = cardClass;
 
       let badges = '';
+      if (stop.attraction) badges += '<span class="badge badge-attraction">⭐ Must See</span>';
       if (stop.free) badges += '<span class="badge badge-free">🅿️ Free</span>';
       if (stop.dog) badges += '<span class="badge badge-dog">🐕 Dog</span>';
       if (stop.overnight && !stop.free) badges += '<span class="badge badge-overnight">Overnight</span>';
@@ -687,6 +778,27 @@
 
       itineraryEl.appendChild(card);
     });
+
+    // Add Tips & Reminders section
+    const tipsHtml = `
+      <div class="tips-section">
+        <div class="tips-header">
+          <span>📋 Trip Reminders</span>
+        </div>
+        <div class="tips-body">
+          <div class="tip-item"><span class="tip-icon">⛽</span><span><strong>Fuel up in St. George, UT.</strong> Last reliable fuel before the long Arizona desert stretch on I-15/I-17.</span></div>
+          <div class="tip-item"><span class="tip-icon">🌡️</span><span><strong>Late June temps:</strong> Idaho 85-95°F days, 55-65°F nights. Utah/Arizona 100°F+ daytime. Keep extra water for the dog and yourselves.</span></div>
+          <div class="tip-item"><span class="tip-icon">🐕</span><span><strong>Dog breaks every 3-4 hours.</strong> Rest areas on I-84 and I-15 have grassy pet walking zones. Never leave the dog in a parked RV in the heat.</span></div>
+          <div class="tip-item"><span class="tip-icon">📞</span><span><strong>Book Twin Falls KOA ahead</strong> if going the paid route: (208) 324-4169. Summer weekends fill up.</span></div>
+          <div class="tip-item"><span class="tip-icon">🏔️</span><span><strong>Snoqualmie Pass (I-90):</strong> No winter concerns in late June. Clear sailing at 3,015 ft.</span></div>
+          <div class="tip-item"><span class="tip-icon">🚐</span><span><strong>RV speed:</strong> Budget 55-60 mph average for fuel economy. Add 15-20% to GPS time estimates.</span></div>
+          <div class="tip-item"><span class="tip-icon">🌙</span><span><strong>Idaho rest area overnight:</strong> Legal and free. Restrooms, well-lit. No hookups, but June nights are mild enough to skip shore power.</span></div>
+          <div class="tip-item"><span class="tip-icon">📱</span><span><strong>Cell signal gaps:</strong> Expect weak/no signal on I-84 between Pendleton and Boise, and on I-17 between Flagstaff and Camp Verde. Download offline maps.</span></div>
+          <div class="tip-item"><span class="tip-icon">💧</span><span><strong>Dog water tip:</strong> Freeze a few water bottles the night before. They'll thaw during the drive and stay cold for the dog.</span></div>
+        </div>
+      </div>
+    `;
+    itineraryEl.insertAdjacentHTML('beforeend', tipsHtml);
 
     // Register Service Worker for offline support
     if ('serviceWorker' in navigator) {
