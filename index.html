@@ -4,12 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Issaquah to Mesa: RV Road Trip</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="RV Trip">
-  <link rel="apple-touch-icon" href="icon-192.svg">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -202,61 +196,15 @@
       background: #ecfdf5;
       color: #059669;
     }
-    .badge-attraction {
-      background: #fef3c7;
-      color: #b45309;
-    }
     .stop-card.free-stop {
       border-left: 4px solid #059669;
-    }
-    .stop-card.attraction {
-      border-left: 4px solid #f59e0b;
     }
     .dot-start { background: #16a34a; }
     .dot-overnight { background: #2563eb; }
     .dot-dog { background: #9333ea; }
     .dot-end { background: #dc2626; }
     .dot-free { background: #059669; }
-    .dot-attraction { background: #f59e0b; }
     .route-line { width: 20px; height: 4px; border-radius: 2px; background: #2563eb; }
-
-    /* Tips/Reminders Section */
-    .tips-section {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin: 12px 0;
-      overflow: hidden;
-    }
-    .tips-header {
-      padding: 14px 16px;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--warning);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid var(--warning);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .tips-body {
-      padding: 14px 16px;
-    }
-    .tip-item {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 12px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.5;
-    }
-    .tip-item:last-child { margin-bottom: 0; }
-    .tip-icon {
-      flex-shrink: 0;
-      font-size: 16px;
-    }
 
     @media (min-width: 768px) {
       .app-layout {
@@ -389,19 +337,66 @@
       pointer-events: none;
     }
     .copy-toast.visible { opacity: 1; }
+
+    /* Schedule Toggle */
+    .schedule-toggle {
+      display: flex;
+      gap: 0;
+      padding: 12px 20px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .schedule-btn {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .schedule-btn:first-child { border-radius: 8px 0 0 8px; }
+    .schedule-btn:last-child { border-radius: 0 8px 8px 0; }
+    .schedule-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .schedule-btn:not(.active):hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .schedule-summary {
+      padding: 10px 20px;
+      background: var(--accent-light);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .schedule-summary strong { color: var(--accent); }
   </style>
 </head>
 <body>
   <div class="app-header">
     <h1>🚐 Issaquah, WA → Mesa, AZ</h1>
-    <div class="subtitle">Indie Campers Comfort Standard | Fidaa + Wife + Dog | Depart Fri 2 PM</div>
+    <div class="subtitle" id="header-subtitle">Indie Campers Comfort Standard | Fidaa + Wife + Dog | Depart Fri 2 PM</div>
   </div>
-  <div class="stats-bar">
+  <div class="schedule-toggle">
+    <button class="schedule-btn active" id="btn-fast" onclick="switchSchedule('fast')">⚡ 2-Day Push (Sat Night)</button>
+    <button class="schedule-btn" id="btn-relaxed" onclick="switchSchedule('relaxed')">🌿 3-Day Relaxed (Sun PM)</button>
+  </div>
+  <div class="schedule-summary" id="schedule-summary">
+    <strong>2-Day Push:</strong> Depart Fri 2 PM → Arrive Sat ~11 PM. Long days (~12 hrs each). Get there fast.
+  </div>
+  <div class="stats-bar" id="stats-bar">
     <div class="stat"><span class="stat-label">Distance</span><span class="stat-value">1,500 mi</span></div>
     <div class="stat"><span class="stat-label">Drive Time</span><span class="stat-value">~24 hrs</span></div>
     <div class="stat"><span class="stat-label">Days</span><span class="stat-value">2</span></div>
     <div class="stat"><span class="stat-label">Dog Stops</span><span class="stat-value">5</span></div>
-    <div class="stat"><span class="stat-label">Attractions</span><span class="stat-value">3</span></div>
   </div>
 
   <div class="app-layout">
@@ -412,7 +407,6 @@
         <div class="legend-item"><div class="legend-dot dot-overnight"></div> Overnight (Paid)</div>
         <div class="legend-item"><div class="legend-dot dot-free"></div> Overnight (Free)</div>
         <div class="legend-item"><div class="legend-dot dot-dog"></div> Dog-Friendly</div>
-        <div class="legend-item"><div class="legend-dot dot-attraction"></div> Things to See</div>
         <div class="legend-item"><div class="route-line"></div> Route</div>
       </div>
       <div class="itinerary" id="itinerary"></div>
@@ -420,7 +414,8 @@
   </div>
 
   <script>
-    const stops = [
+    // ========== 2-DAY PUSH SCHEDULE (original) ==========
+    const stopsFast = [
       {
         id: 'start',
         name: 'Issaquah, WA',
@@ -499,19 +494,6 @@
         free: true
       },
       {
-        id: 'shoshone-falls',
-        name: '⭐ Shoshone Falls ("Niagara of the West")',
-        type: 'attraction',
-        lat: 42.5930,
-        lng: -114.3998,
-        day: 2,
-        time: 'Saturday ~8:30 AM (before departing Twin Falls)',
-        details: 'Only 5 min from Twin Falls. 212-ft waterfall, taller than Niagara. Dogs welcome on leash. Great morning walk. $5 vehicle entry. Best flow in June!',
-        cumMiles: 565,
-        dog: true,
-        attraction: true
-      },
-      {
         id: 'slc',
         name: 'Salt Lake City (I-15 Corridor)',
         type: 'fuel',
@@ -575,19 +557,6 @@
         dog: true
       },
       {
-        id: 'snow-canyon',
-        name: '⭐ Snow Canyon State Park',
-        type: 'attraction',
-        lat: 37.2000,
-        lng: -113.6350,
-        day: 2,
-        time: 'Saturday ~4:45 PM (quick detour from St. George)',
-        details: '10 min from St. George. Stunning red rock + black lava formations. Dogs on leash on Whiptail Trail (easy, 30 min). $10 vehicle entry. Worth the stop!',
-        cumMiles: 1135,
-        dog: true,
-        attraction: true
-      },
-      {
         id: 'flagstaff',
         name: 'Flagstaff Rest Area (I-17)',
         type: 'break',
@@ -598,19 +567,6 @@
         details: 'Final dog break before Mesa. Rest area with pet walking zone. Only 150 miles to go!',
         cumMiles: 1310,
         dog: true
-      },
-      {
-        id: 'sedona',
-        name: '⭐ Sedona / Oak Creek Canyon Overlook',
-        type: 'attraction',
-        lat: 34.8697,
-        lng: -111.7610,
-        day: 2,
-        time: 'Saturday ~9:15 PM (sunset detour, 20 min off I-17)',
-        details: 'Take Exit 298 (AZ-179). Iconic red rock views. Dogs welcome on Bell Rock Pathway (easy, paved). If it is dark, skip and visit on a future trip. Adds ~30 min.',
-        cumMiles: 1340,
-        dog: true,
-        attraction: true
       },
       {
         id: 'mesa',
@@ -626,7 +582,188 @@
       }
     ];
 
-    // Route waypoints (approximation of I-90 → I-82 → I-84 → I-15 → I-17)
+    // ========== 3-DAY RELAXED SCHEDULE (Sunday PM arrival) ==========
+    const stopsRelaxed = [
+      {
+        id: 'start',
+        name: 'Issaquah, WA',
+        type: 'start',
+        lat: 47.5301,
+        lng: -122.0326,
+        day: 1,
+        time: 'Friday 2:00 PM',
+        details: 'Departure. Top off fuel, walk the dog, hit I-90 East over Snoqualmie Pass. No rush today.',
+        cumMiles: 0,
+        dog: false
+      },
+      {
+        id: 'ellensburg',
+        name: 'Ellensburg Rest Area (I-90)',
+        type: 'break',
+        lat: 46.9965,
+        lng: -120.5478,
+        day: 1,
+        time: 'Friday ~3:45 PM',
+        details: 'Dog break. Grassy rest area with pet walking zone. Take 20 min, stretch.',
+        cumMiles: 108,
+        dog: true
+      },
+      {
+        id: 'hermiston',
+        name: 'Hermiston, OR (I-82/I-84 Junction)',
+        type: 'fuel',
+        lat: 45.8404,
+        lng: -119.2895,
+        day: 1,
+        time: 'Friday ~6:00 PM',
+        details: 'Fuel + dinner. Sit-down meal. Multiple restaurants at junction. Walk the dog, no rush.',
+        cumMiles: 230,
+        dog: true
+      },
+      {
+        id: 'boise',
+        name: 'Boise Riverside RV Park',
+        type: 'overnight',
+        lat: 43.6007,
+        lng: -116.2312,
+        day: 1,
+        time: 'Friday ~9:00 PM',
+        details: 'OVERNIGHT. Dog-friendly, walking paths along Boise River. Full hookups available. Only 7 hrs of driving today. Relax, sleep well. ~$40-50/night.',
+        cumMiles: 430,
+        dog: true,
+        phone: '(208) 375-7432',
+        overnight: true
+      },
+      {
+        id: 'boise-walmart',
+        name: 'Boise Walmart (S Cole Rd)',
+        type: 'overnight',
+        lat: 43.5820,
+        lng: -116.2400,
+        day: 1,
+        time: 'Friday ~9:00 PM',
+        details: 'FREE OPTION. Walmart allows overnight RV parking (check with manager). Flat lot, well-lit, 24hr restrooms inside. No hookups.',
+        cumMiles: 430,
+        dog: true,
+        overnight: true,
+        free: true
+      },
+      {
+        id: 'twinfalls',
+        name: 'Twin Falls (Dog Break + Fuel)',
+        type: 'fuel',
+        lat: 42.7249,
+        lng: -114.5178,
+        day: 2,
+        time: 'Saturday ~11:00 AM',
+        details: 'Fuel up, walk the dog at Shoshone Falls Park (dog-friendly trails). Beautiful waterfalls. Take 30-45 min.',
+        cumMiles: 560,
+        dog: true
+      },
+      {
+        id: 'slc',
+        name: 'Salt Lake City (Lunch + Fuel)',
+        type: 'fuel',
+        lat: 40.7608,
+        lng: -111.8910,
+        day: 2,
+        time: 'Saturday ~2:00 PM',
+        details: 'Lunch break in SLC. Good restaurants near I-15. Fuel up. Dog walk at Liberty Park (off-leash area).',
+        cumMiles: 780,
+        dog: true
+      },
+      {
+        id: 'scipio-rest',
+        name: 'I-15 Rest Area (Scipio, UT)',
+        type: 'break',
+        lat: 39.2450,
+        lng: -112.1020,
+        day: 2,
+        time: 'Saturday ~3:30 PM',
+        details: 'Quick stretch. Restrooms, shaded picnic area, pet walking. 15 min.',
+        cumMiles: 900,
+        dog: true
+      },
+      {
+        id: 'cedarCity',
+        name: 'Cedar City KOA',
+        type: 'break',
+        lat: 37.6775,
+        lng: -113.0619,
+        day: 2,
+        time: 'Saturday ~5:30 PM',
+        details: 'Dog-friendly with fenced dog run. Good fuel/snack stop.',
+        cumMiles: 1050,
+        dog: true,
+        phone: '(435) 586-9872'
+      },
+      {
+        id: 'stgeorge',
+        name: 'St. George, UT (Overnight)',
+        type: 'overnight',
+        lat: 37.1041,
+        lng: -113.5841,
+        day: 2,
+        time: 'Saturday ~6:30 PM',
+        details: 'OVERNIGHT. McArthur Temple View RV Resort or Leeds RV Park. Beautiful red rock area. Arrive early enough to enjoy the evening. Walk the dog at Tonaquint Park. ~$45-60/night.',
+        cumMiles: 1130,
+        dog: true,
+        phone: '(435) 673-6400',
+        overnight: true
+      },
+      {
+        id: 'stgeorge-blm',
+        name: 'BLM Land (South of St. George)',
+        type: 'overnight',
+        lat: 37.0500,
+        lng: -113.5500,
+        day: 2,
+        time: 'Saturday ~6:30 PM',
+        details: 'FREE OPTION. BLM dispersed camping south of St. George off Old Highway 91. Flat desert ground, no hookups, no facilities. Legal and free. Scenic views.',
+        cumMiles: 1135,
+        dog: true,
+        overnight: true,
+        free: true
+      },
+      {
+        id: 'flagstaff',
+        name: 'Flagstaff (Lunch + Dog Break)',
+        type: 'break',
+        lat: 35.1983,
+        lng: -111.6513,
+        day: 3,
+        time: 'Sunday ~12:00 PM',
+        details: 'Lunch in Flagstaff. Dog-friendly patios on Route 66. Walk at Thorpe Park. Only 150 miles to go!',
+        cumMiles: 1310,
+        dog: true
+      },
+      {
+        id: 'camp-verde',
+        name: 'Camp Verde Rest Area (I-17)',
+        type: 'break',
+        lat: 34.5636,
+        lng: -111.8540,
+        day: 3,
+        time: 'Sunday ~1:15 PM',
+        details: 'Final dog break. Shaded rest area, pet walking zone. 100 miles to Mesa. Almost there!',
+        cumMiles: 1380,
+        dog: true
+      },
+      {
+        id: 'mesa',
+        name: 'Mesa, AZ',
+        type: 'end',
+        lat: 33.4152,
+        lng: -111.8315,
+        day: 3,
+        time: 'Sunday ~3:00 PM',
+        details: 'Arrival! Plenty of daylight to settle in. Dog-friendly RV parks: Mesa-Apache Junction KOA, Monte Vista RV Resort, Usery Mountain Regional Park.',
+        cumMiles: 1500,
+        dog: false
+      }
+    ];
+
+    // Route waypoints (same route, both schedules)
     const routeCoords = [
       [47.530, -122.033], // Issaquah
       [47.390, -121.410], // Snoqualmie Pass
@@ -654,6 +791,9 @@
       [33.800, -111.930], // North Phoenix
       [33.415, -111.832]  // Mesa
     ];
+
+    let currentSchedule = 'fast';
+    let markers = [];
 
     // Initialize map
     const map = L.map('map', {
@@ -692,140 +832,136 @@
       end: createIcon('#dc2626', '🏁'),
       overnight: createIcon('#2563eb', '🛏️'),
       free: createIcon('#059669', '🅿️'),
-      attraction: createIcon('#f59e0b', '⭐'),
       dog: createIcon('#9333ea', '🐕'),
       fuel: createIcon('#ea580c', '⛽'),
       break: createIcon('#9333ea', '🐕')
     };
 
-    // Add markers
-    stops.forEach(stop => {
-      let icon = icons[stop.type];
-      if (stop.attraction) icon = icons.attraction;
-      else if (stop.free && stop.overnight) icon = icons.free;
-      else if (stop.overnight) icon = icons.overnight;
-      else if (stop.dog) icon = icons.dog;
+    function switchSchedule(schedule) {
+      currentSchedule = schedule;
+      document.getElementById('btn-fast').classList.toggle('active', schedule === 'fast');
+      document.getElementById('btn-relaxed').classList.toggle('active', schedule === 'relaxed');
 
-      const marker = L.marker([stop.lat, stop.lng], { icon })
-        .addTo(map)
-        .bindPopup(`
-          <b>${stop.name}</b><br>
-          <span style="color:#64748b;font-size:12px;">${stop.time}</span><br>
-          ${stop.details}<br>
-          ${stop.dog ? '<span class="popup-dog">🐕 Dog-Friendly</span>' : ''}
-          ${stop.phone ? `<br>📞 ${stop.phone}` : ''}
-          <br><span style="color:#64748b;font-size:11px;">${stop.cumMiles} miles from start</span>
-        `);
-    });
+      const summary = document.getElementById('schedule-summary');
+      const statsBar = document.getElementById('stats-bar');
 
-    // Build itinerary cards
-    const itineraryEl = document.getElementById('itinerary');
-    let currentDay = 0;
-
-    stops.forEach(stop => {
-      if (stop.day !== currentDay) {
-        currentDay = stop.day;
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'day-title';
-        dayHeader.textContent = currentDay === 1 
-          ? 'Day 1: Friday 2 PM → Midnight (Issaquah to Twin Falls)' 
-          : 'Day 2: Saturday Morning → Night (Twin Falls to Mesa)';
-        itineraryEl.appendChild(dayHeader);
+      if (schedule === 'fast') {
+        summary.innerHTML = '<strong>2-Day Push:</strong> Depart Fri 2 PM → Arrive Sat ~11 PM. Long days (~12 hrs driving each). Get there fast.';
+        statsBar.innerHTML = `
+          <div class="stat"><span class="stat-label">Distance</span><span class="stat-value">1,500 mi</span></div>
+          <div class="stat"><span class="stat-label">Drive Time</span><span class="stat-value">~24 hrs</span></div>
+          <div class="stat"><span class="stat-label">Days</span><span class="stat-value">2</span></div>
+          <div class="stat"><span class="stat-label">Dog Stops</span><span class="stat-value">5</span></div>
+          <div class="stat"><span class="stat-label">Max/Day</span><span class="stat-value">~12 hrs</span></div>
+        `;
+      } else {
+        summary.innerHTML = '<strong>3-Day Relaxed:</strong> Depart Fri 2 PM → Arrive Sun ~3 PM. Shorter days (5-8 hrs driving). Two overnights. Arrive with energy.';
+        statsBar.innerHTML = `
+          <div class="stat"><span class="stat-label">Distance</span><span class="stat-value">1,500 mi</span></div>
+          <div class="stat"><span class="stat-label">Drive Time</span><span class="stat-value">~24 hrs</span></div>
+          <div class="stat"><span class="stat-label">Days</span><span class="stat-value">3</span></div>
+          <div class="stat"><span class="stat-label">Dog Stops</span><span class="stat-value">6</span></div>
+          <div class="stat"><span class="stat-label">Max/Day</span><span class="stat-value">~8 hrs</span></div>
+        `;
       }
 
-      const card = document.createElement('div');
-      let cardClass = 'stop-card';
-      if (stop.attraction) cardClass += ' attraction';
-      else if (stop.free) cardClass += ' free-stop';
-      else if (stop.dog) cardClass += ' dog-friendly';
-      if (stop.overnight && !stop.free) cardClass += ' overnight';
-      card.className = cardClass;
+      renderStops(schedule === 'fast' ? stopsFast : stopsRelaxed);
+    }
 
-      let badges = '';
-      if (stop.attraction) badges += '<span class="badge badge-attraction">⭐ Must See</span>';
-      if (stop.free) badges += '<span class="badge badge-free">🅿️ Free</span>';
-      if (stop.dog) badges += '<span class="badge badge-dog">🐕 Dog</span>';
-      if (stop.overnight && !stop.free) badges += '<span class="badge badge-overnight">Overnight</span>';
-      if (stop.type === 'fuel') badges += '<span class="badge badge-fuel">Fuel</span>';
+    function renderStops(stops) {
+      // Clear existing markers
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
 
-      card.innerHTML = `
-        <div class="stop-header">
-          <span class="stop-name">${stop.name}</span>
-          <div class="stop-badges">${badges}</div>
-        </div>
-        <div class="stop-details">
-          <p>${stop.details}</p>
-          ${stop.phone ? `<p>📞 ${stop.phone}</p>` : ''}
-        </div>
-        <div class="stop-meta">
-          <span>🕐 ${stop.time}</span>
-          <span>📍 ${stop.cumMiles} mi</span>
-        </div>
-      `;
+      // Add markers
+      stops.forEach(stop => {
+        let icon = icons[stop.type];
+        if (stop.free && stop.overnight) icon = icons.free;
+        else if (stop.overnight) icon = icons.overnight;
+        else if (stop.dog) icon = icons.dog;
 
-      card.addEventListener('click', () => {
-        map.setView([stop.lat, stop.lng], 10, { animate: true });
-        // Find and open the marker popup
-        map.eachLayer(layer => {
-          if (layer instanceof L.Marker) {
-            const pos = layer.getLatLng();
-            if (Math.abs(pos.lat - stop.lat) < 0.01 && Math.abs(pos.lng - stop.lng) < 0.01) {
-              layer.openPopup();
-            }
-          }
-        });
+        const marker = L.marker([stop.lat, stop.lng], { icon })
+          .addTo(map)
+          .bindPopup(`
+            <b>${stop.name}</b><br>
+            <span style="color:#64748b;font-size:12px;">${stop.time}</span><br>
+            ${stop.details}<br>
+            ${stop.dog ? '<span class="popup-dog">🐕 Dog-Friendly</span>' : ''}
+            ${stop.phone ? `<br>📞 ${stop.phone}` : ''}
+            <br><span style="color:#64748b;font-size:11px;">${stop.cumMiles} miles from start</span>
+          `);
+        markers.push(marker);
       });
 
-      itineraryEl.appendChild(card);
-    });
+      // Build itinerary cards
+      const itineraryEl = document.getElementById('itinerary');
+      itineraryEl.innerHTML = '';
+      let currentDay = 0;
 
-    // Add Tips & Reminders section
-    const tipsHtml = `
-      <div class="tips-section">
-        <div class="tips-header">
-          <span>📋 Trip Reminders</span>
-        </div>
-        <div class="tips-body">
-          <div class="tip-item"><span class="tip-icon">⛽</span><span><strong>Fuel up in St. George, UT.</strong> Last reliable fuel before the long Arizona desert stretch on I-15/I-17.</span></div>
-          <div class="tip-item"><span class="tip-icon">🌡️</span><span><strong>Late June temps:</strong> Idaho 85-95°F days, 55-65°F nights. Utah/Arizona 100°F+ daytime. Keep extra water for the dog and yourselves.</span></div>
-          <div class="tip-item"><span class="tip-icon">🐕</span><span><strong>Dog breaks every 3-4 hours.</strong> Rest areas on I-84 and I-15 have grassy pet walking zones. Never leave the dog in a parked RV in the heat.</span></div>
-          <div class="tip-item"><span class="tip-icon">📞</span><span><strong>Book Twin Falls KOA ahead</strong> if going the paid route: (208) 324-4169. Summer weekends fill up.</span></div>
-          <div class="tip-item"><span class="tip-icon">🏔️</span><span><strong>Snoqualmie Pass (I-90):</strong> No winter concerns in late June. Clear sailing at 3,015 ft.</span></div>
-          <div class="tip-item"><span class="tip-icon">🚐</span><span><strong>RV speed:</strong> Budget 55-60 mph average for fuel economy. Add 15-20% to GPS time estimates.</span></div>
-          <div class="tip-item"><span class="tip-icon">🌙</span><span><strong>Idaho rest area overnight:</strong> Legal and free. Restrooms, well-lit. No hookups, but June nights are mild enough to skip shore power.</span></div>
-          <div class="tip-item"><span class="tip-icon">📱</span><span><strong>Cell signal gaps:</strong> Expect weak/no signal on I-84 between Pendleton and Boise, and on I-17 between Flagstaff and Camp Verde. Download offline maps.</span></div>
-          <div class="tip-item"><span class="tip-icon">💧</span><span><strong>Dog water tip:</strong> Freeze a few water bottles the night before. They'll thaw during the drive and stay cold for the dog.</span></div>
-        </div>
-      </div>
-    `;
-    itineraryEl.insertAdjacentHTML('beforeend', tipsHtml);
+      const dayLabels = currentSchedule === 'fast' 
+        ? {
+          1: 'Day 1: Friday 2 PM → Midnight (Issaquah to Twin Falls)',
+          2: 'Day 2: Saturday Morning → Night (Twin Falls to Mesa)'
+        }
+        : {
+          1: 'Day 1: Friday 2 PM → 9 PM (Issaquah to Boise) — 7 hrs driving',
+          2: 'Day 2: Saturday 9 AM → 6:30 PM (Boise to St. George) — 8 hrs driving',
+          3: 'Day 3: Sunday 9 AM → 3 PM (St. George to Mesa) — 5.5 hrs driving'
+        };
 
-    // Register Service Worker for offline support
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').then(() => {
-        console.log('SW registered - app works offline');
+      stops.forEach(stop => {
+        if (stop.day !== currentDay) {
+          currentDay = stop.day;
+          const dayHeader = document.createElement('div');
+          dayHeader.className = 'day-title';
+          dayHeader.textContent = dayLabels[currentDay] || `Day ${currentDay}`;
+          itineraryEl.appendChild(dayHeader);
+        }
+
+        const card = document.createElement('div');
+        let cardClass = 'stop-card';
+        if (stop.free) cardClass += ' free-stop';
+        else if (stop.dog) cardClass += ' dog-friendly';
+        if (stop.overnight && !stop.free) cardClass += ' overnight';
+        card.className = cardClass;
+
+        let badges = '';
+        if (stop.free) badges += '<span class="badge badge-free">🅿️ Free</span>';
+        if (stop.dog) badges += '<span class="badge badge-dog">🐕 Dog</span>';
+        if (stop.overnight && !stop.free) badges += '<span class="badge badge-overnight">Overnight</span>';
+        if (stop.type === 'fuel') badges += '<span class="badge badge-fuel">Fuel</span>';
+
+        card.innerHTML = `
+          <div class="stop-header">
+            <span class="stop-name">${stop.name}</span>
+            <div class="stop-badges">${badges}</div>
+          </div>
+          <div class="stop-details">
+            <p>${stop.details}</p>
+            ${stop.phone ? `<p>📞 ${stop.phone}</p>` : ''}
+          </div>
+          <div class="stop-meta">
+            <span>🕐 ${stop.time}</span>
+            <span>📍 ${stop.cumMiles} mi</span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          map.setView([stop.lat, stop.lng], 10, { animate: true });
+          markers.forEach(m => {
+            const pos = m.getLatLng();
+            if (Math.abs(pos.lat - stop.lat) < 0.01 && Math.abs(pos.lng - stop.lng) < 0.01) {
+              m.openPopup();
+            }
+          });
+        });
+
+        itineraryEl.appendChild(card);
       });
     }
 
-    // Install prompt for "Add to Home Screen"
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      // Show install option in share modal
-      const installBtn = document.createElement('button');
-      installBtn.className = 'modal-btn primary';
-      installBtn.textContent = '⬇️ Install as App';
-      installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choice) => {
-          if (choice.outcome === 'accepted') showToast('App installed!');
-          deferredPrompt = null;
-          installBtn.remove();
-        });
-      });
-      document.querySelector('.modal-actions').prepend(installBtn);
-    });
+    // Initial render
+    renderStops(stopsFast);
 
     // Share/Transfer to Mobile functionality
     const currentUrl = window.location.href;
@@ -917,7 +1053,7 @@
 
     document.getElementById('btn-email').addEventListener('click', () => {
       const subject = encodeURIComponent('RV Trip Map: Issaquah to Mesa');
-      const body = encodeURIComponent(`Here's our road trip map with all the dog-friendly stops:\n\n${currentUrl}\n\nDepart: Friday 2 PM from Issaquah\nArrive: Saturday ~11 PM in Mesa`);
+      const body = encodeURIComponent(`Here's our road trip map with all the dog-friendly stops:\n\n${currentUrl}\n\nOption 1 (Push): Depart Fri 2 PM → Arrive Sat ~11 PM\nOption 2 (Relaxed): Depart Fri 2 PM → Arrive Sun ~3 PM\n\nToggle between schedules in the app!`);
       window.open(`mailto:?subject=${subject}&body=${body}`);
     });
   </script>
