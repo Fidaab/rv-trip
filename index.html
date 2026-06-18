@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Issaquah to Mesa: RV Road Trip</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RV Trip">
+  <link rel="apple-touch-icon" href="icon-192.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #ea580c;
+      --dog: #9333ea;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    .app-header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .app-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .app-header .subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      padding: 12px 20px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .stat {
+      display: flex;
+      flex-direction: column;
+      min-width: 80px;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    #map {
+      width: 100%;
+      height: 45vh;
+      min-height: 300px;
+      z-index: 1;
+    }
+    .itinerary {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 40px;
+    }
+    .day-section {
+      margin-bottom: 8px;
+    }
+    .day-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 0;
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: 12px;
+    }
+    .stop-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .stop-card:hover, .stop-card:active {
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+    }
+    .stop-card.dog-friendly {
+      border-left: 4px solid var(--dog);
+    }
+    .stop-card.overnight {
+      border-left: 4px solid var(--success);
+    }
+    .stop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .stop-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .stop-badges {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge-dog {
+      background: #f3e8ff;
+      color: var(--dog);
+    }
+    .badge-overnight {
+      background: #dcfce7;
+      color: var(--success);
+    }
+    .badge-fuel {
+      background: #fff7ed;
+      color: var(--warning);
+    }
+    .stop-details {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .stop-details p {
+      margin-bottom: 4px;
+    }
+    .stop-meta {
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .stop-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend {
+      padding: 12px 20px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .badge-free {
+      background: #ecfdf5;
+      color: #059669;
+    }
+    .stop-card.free-stop {
+      border-left: 4px solid #059669;
+    }
+    .dot-start { background: #16a34a; }
+    .dot-overnight { background: #2563eb; }
+    .dot-dog { background: #9333ea; }
+    .dot-end { background: #dc2626; }
+    .dot-free { background: #059669; }
+    .route-line { width: 20px; height: 4px; border-radius: 2px; background: #2563eb; }
+
+    @media (min-width: 768px) {
+      .app-layout {
+        display: flex;
+        height: calc(100vh - 110px);
+      }
+      #map {
+        flex: 1;
+        height: 100%;
+        min-height: unset;
+      }
+      .itinerary-panel {
+        width: 400px;
+        overflow-y: auto;
+        border-left: 1px solid var(--border);
+      }
+    }
+
+    .leaflet-popup-content { font-size: 13px; line-height: 1.4; }
+    .leaflet-popup-content b { color: var(--text); }
+    .popup-dog { color: var(--dog); font-weight: 600; }
+
+    /* Share/Transfer Button */
+    .share-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .share-btn:hover { transform: scale(1.05); }
+    .share-btn:active { transform: scale(0.95); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal h2 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .modal p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    .qr-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .qr-container canvas, .qr-container img {
+      border-radius: 8px;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .modal-btn {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .modal-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .modal-btn.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .modal-btn.primary:hover { background: #1d4ed8; }
+    .modal-close {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    .copy-toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 4000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .copy-toast.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <h1>🚐 Issaquah, WA → Mesa, AZ</h1>
+    <div class="subtitle">Indie Campers Comfort Standard | Fidaa + Wife + Dog | Depart Fri 2 PM</div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-label">Distance</span><span class="stat-value">1,500 mi</span></div>
+    <div class="stat"><span class="stat-label">Drive Time</span><span class="stat-value">~24 hrs</span></div>
+    <div class="stat"><span class="stat-label">Days</span><span class="stat-value">2</span></div>
+    <div class="stat"><span class="stat-label">Dog Stops</span><span class="stat-value">5</span></div>
+  </div>
+
+  <div class="app-layout">
+    <div id="map"></div>
+    <div class="itinerary-panel">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot dot-start"></div> Start/End</div>
+        <div class="legend-item"><div class="legend-dot dot-overnight"></div> Overnight (Paid)</div>
+        <div class="legend-item"><div class="legend-dot dot-free"></div> Overnight (Free)</div>
+        <div class="legend-item"><div class="legend-dot dot-dog"></div> Dog-Friendly</div>
+        <div class="legend-item"><div class="route-line"></div> Route</div>
+      </div>
+      <div class="itinerary" id="itinerary"></div>
+    </div>
+  </div>
+
+  <script>
+    const stops = [
+      {
+        id: 'start',
+        name: 'Issaquah, WA',
+        type: 'start',
+        lat: 47.5301,
+        lng: -122.0326,
+        day: 1,
+        time: 'Friday 2:00 PM',
+        details: 'Departure. Top off fuel, walk the dog, hit I-90 East over Snoqualmie Pass.',
+        cumMiles: 0,
+        dog: false
+      },
+      {
+        id: 'ellensburg',
+        name: 'Ellensburg Rest Area (I-90)',
+        type: 'break',
+        lat: 46.9965,
+        lng: -120.5478,
+        day: 1,
+        time: 'Friday ~3:45 PM',
+        details: 'Quick dog break. Grassy rest area with pet walking zone. 15 min stop.',
+        cumMiles: 108,
+        dog: true
+      },
+      {
+        id: 'hermiston',
+        name: 'Hermiston, OR (I-82/I-84 Junction)',
+        type: 'fuel',
+        lat: 45.8404,
+        lng: -119.2895,
+        day: 1,
+        time: 'Friday ~6:00 PM',
+        details: 'Fuel stop + dinner. Multiple gas stations and food at junction. Dog walk at truck stop area.',
+        cumMiles: 230,
+        dog: true
+      },
+      {
+        id: 'boise',
+        name: 'Boise Riverside RV Park',
+        type: 'break',
+        lat: 43.6007,
+        lng: -116.2312,
+        day: 1,
+        time: 'Friday ~9:00 PM',
+        details: 'Dog-friendly, walking paths along Boise River. Good stretch stop. If pushing through, next stop is Twin Falls.',
+        cumMiles: 430,
+        dog: true,
+        phone: '(208) 375-7432'
+      },
+      {
+        id: 'twinfalls',
+        name: 'Twin Falls / Jerome KOA',
+        type: 'overnight',
+        lat: 42.7249,
+        lng: -114.5178,
+        day: 1,
+        time: 'Friday ~11:30 PM (sleep until morning)',
+        details: 'PAID OPTION. Dog park on-site, pull-through sites, full hookups (power/water/sewer). Right off I-84 Exit 173. Late arrival OK (self check-in). ~$45-55/night.',
+        cumMiles: 560,
+        dog: true,
+        phone: '(208) 324-4169',
+        overnight: true
+      },
+      {
+        id: 'twinfalls-rest',
+        name: 'I-84 Rest Area (Milepost 173, Twin Falls)',
+        type: 'overnight',
+        lat: 42.6850,
+        lng: -114.4700,
+        day: 1,
+        time: 'Friday ~11:30 PM (sleep until morning)',
+        details: 'FREE OPTION. Idaho allows overnight rest area parking. Restrooms, pet walking area, well-lit. No hookups, but free and legal. Quiet after midnight.',
+        cumMiles: 555,
+        dog: true,
+        overnight: true,
+        free: true
+      },
+      {
+        id: 'slc',
+        name: 'Salt Lake City (I-15 Corridor)',
+        type: 'fuel',
+        lat: 40.7608,
+        lng: -111.8910,
+        day: 2,
+        time: 'Saturday ~11:00 AM',
+        details: 'Fuel + dog break. Pet-friendly rest areas along I-15 through SLC. Stretch your legs, grab lunch.',
+        cumMiles: 780,
+        dog: true
+      },
+      {
+        id: 'fillmore',
+        name: 'Fillmore KOA (I-15 Exit 163)',
+        type: 'break',
+        lat: 38.9688,
+        lng: -112.3235,
+        day: 2,
+        time: 'Saturday ~1:30 PM',
+        details: 'PAID OPTION. Dog-friendly campground right off I-15. Pull-through sites, full hookups. Good if you need extended rest.',
+        cumMiles: 930,
+        dog: true,
+        phone: '(435) 743-4420'
+      },
+      {
+        id: 'scipio-rest',
+        name: 'I-15 Rest Area (Scipio, UT)',
+        type: 'break',
+        lat: 39.2450,
+        lng: -112.1020,
+        day: 2,
+        time: 'Saturday ~12:45 PM',
+        details: 'FREE OPTION. Quick nap or dog break. Restrooms, shaded picnic area, pet walking. Utah limits to a few hours, but fine for a power nap.',
+        cumMiles: 900,
+        dog: true,
+        free: true
+      },
+      {
+        id: 'cedarCity',
+        name: 'Cedar City KOA',
+        type: 'break',
+        lat: 37.6775,
+        lng: -113.0619,
+        day: 2,
+        time: 'Saturday ~3:00 PM',
+        details: 'Dog-friendly with fenced dog run. Good fuel/snack stop. Last major services before long desert stretch into AZ.',
+        cumMiles: 1050,
+        dog: true,
+        phone: '(435) 586-9872'
+      },
+      {
+        id: 'stgeorge',
+        name: 'St. George, UT (Fuel + Dog Break)',
+        type: 'fuel',
+        lat: 37.1041,
+        lng: -113.5841,
+        day: 2,
+        time: 'Saturday ~4:30 PM',
+        details: 'Last fuel before Arizona. Dog-friendly rest area. From here: I-15 south to I-17, straight shot to Mesa.',
+        cumMiles: 1130,
+        dog: true
+      },
+      {
+        id: 'flagstaff',
+        name: 'Flagstaff Rest Area (I-17)',
+        type: 'break',
+        lat: 35.1983,
+        lng: -111.6513,
+        day: 2,
+        time: 'Saturday ~8:30 PM',
+        details: 'Final dog break before Mesa. Rest area with pet walking zone. Only 150 miles to go!',
+        cumMiles: 1310,
+        dog: true
+      },
+      {
+        id: 'mesa',
+        name: 'Mesa, AZ',
+        type: 'end',
+        lat: 33.4152,
+        lng: -111.8315,
+        day: 2,
+        time: 'Saturday ~11:00 PM',
+        details: 'Arrival! Dog-friendly RV parks: Mesa-Apache Junction KOA, Monte Vista RV Resort, Usery Mountain Regional Park.',
+        cumMiles: 1500,
+        dog: false
+      }
+    ];
+
+    // Route waypoints (approximation of I-90 → I-82 → I-84 → I-15 → I-17)
+    const routeCoords = [
+      [47.530, -122.033], // Issaquah
+      [47.390, -121.410], // Snoqualmie Pass
+      [47.000, -120.548], // Ellensburg
+      [46.730, -120.030], // Yakima area
+      [46.250, -119.310], // Tri-Cities
+      [45.840, -119.290], // Hermiston
+      [45.600, -118.000], // Pendleton
+      [44.940, -116.960], // Ontario OR
+      [43.620, -116.210], // Boise
+      [42.730, -114.460], // Twin Falls
+      [42.560, -113.000], // I-86 junction
+      [42.100, -112.450], // Pocatello area
+      [41.740, -111.830], // Logan/Ogden
+      [40.760, -111.890], // Salt Lake City
+      [39.700, -112.100], // Nephi
+      [38.970, -112.320], // Fillmore
+      [38.350, -112.700], // Beaver
+      [37.680, -113.060], // Cedar City
+      [37.100, -113.580], // St. George
+      [36.870, -113.100], // Fredonia area
+      [36.100, -112.100], // Near Grand Canyon junction
+      [35.200, -111.650], // Flagstaff
+      [34.560, -111.860], // Camp Verde
+      [33.800, -111.930], // North Phoenix
+      [33.415, -111.832]  // Mesa
+    ];
+
+    // Initialize map
+    const map = L.map('map', {
+      zoomControl: true,
+      scrollWheelZoom: true
+    }).setView([40.5, -115.0], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Draw route
+    const routeLine = L.polyline(routeCoords, {
+      color: '#2563eb',
+      weight: 4,
+      opacity: 0.8,
+      smoothFactor: 1.5
+    }).addTo(map);
+
+    map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+
+    // Custom icons
+    function createIcon(color, symbol) {
+      return L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;">${symbol}</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -16]
+      });
+    }
+
+    const icons = {
+      start: createIcon('#16a34a', '🏠'),
+      end: createIcon('#dc2626', '🏁'),
+      overnight: createIcon('#2563eb', '🛏️'),
+      free: createIcon('#059669', '🅿️'),
+      dog: createIcon('#9333ea', '🐕'),
+      fuel: createIcon('#ea580c', '⛽'),
+      break: createIcon('#9333ea', '🐕')
+    };
+
+    // Add markers
+    stops.forEach(stop => {
+      let icon = icons[stop.type];
+      if (stop.free && stop.overnight) icon = icons.free;
+      else if (stop.overnight) icon = icons.overnight;
+      else if (stop.dog) icon = icons.dog;
+
+      const marker = L.marker([stop.lat, stop.lng], { icon })
+        .addTo(map)
+        .bindPopup(`
+          <b>${stop.name}</b><br>
+          <span style="color:#64748b;font-size:12px;">${stop.time}</span><br>
+          ${stop.details}<br>
+          ${stop.dog ? '<span class="popup-dog">🐕 Dog-Friendly</span>' : ''}
+          ${stop.phone ? `<br>📞 ${stop.phone}` : ''}
+          <br><span style="color:#64748b;font-size:11px;">${stop.cumMiles} miles from start</span>
+        `);
+    });
+
+    // Build itinerary cards
+    const itineraryEl = document.getElementById('itinerary');
+    let currentDay = 0;
+
+    stops.forEach(stop => {
+      if (stop.day !== currentDay) {
+        currentDay = stop.day;
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-title';
+        dayHeader.textContent = currentDay === 1 
+          ? 'Day 1: Friday 2 PM → Midnight (Issaquah to Twin Falls)' 
+          : 'Day 2: Saturday Morning → Night (Twin Falls to Mesa)';
+        itineraryEl.appendChild(dayHeader);
+      }
+
+      const card = document.createElement('div');
+      let cardClass = 'stop-card';
+      if (stop.free) cardClass += ' free-stop';
+      else if (stop.dog) cardClass += ' dog-friendly';
+      if (stop.overnight && !stop.free) cardClass += ' overnight';
+      card.className = cardClass;
+
+      let badges = '';
+      if (stop.free) badges += '<span class="badge badge-free">🅿️ Free</span>';
+      if (stop.dog) badges += '<span class="badge badge-dog">🐕 Dog</span>';
+      if (stop.overnight && !stop.free) badges += '<span class="badge badge-overnight">Overnight</span>';
+      if (stop.type === 'fuel') badges += '<span class="badge badge-fuel">Fuel</span>';
+
+      card.innerHTML = `
+        <div class="stop-header">
+          <span class="stop-name">${stop.name}</span>
+          <div class="stop-badges">${badges}</div>
+        </div>
+        <div class="stop-details">
+          <p>${stop.details}</p>
+          ${stop.phone ? `<p>📞 ${stop.phone}</p>` : ''}
+        </div>
+        <div class="stop-meta">
+          <span>🕐 ${stop.time}</span>
+          <span>📍 ${stop.cumMiles} mi</span>
+        </div>
+      `;
+
+      card.addEventListener('click', () => {
+        map.setView([stop.lat, stop.lng], 10, { animate: true });
+        // Find and open the marker popup
+        map.eachLayer(layer => {
+          if (layer instanceof L.Marker) {
+            const pos = layer.getLatLng();
+            if (Math.abs(pos.lat - stop.lat) < 0.01 && Math.abs(pos.lng - stop.lng) < 0.01) {
+              layer.openPopup();
+            }
+          }
+        });
+      });
+
+      itineraryEl.appendChild(card);
+    });
+
+    // Register Service Worker for offline support
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(() => {
+        console.log('SW registered - app works offline');
+      });
+    }
+
+    // Install prompt for "Add to Home Screen"
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      // Show install option in share modal
+      const installBtn = document.createElement('button');
+      installBtn.className = 'modal-btn primary';
+      installBtn.textContent = '⬇️ Install as App';
+      installBtn.addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choice) => {
+          if (choice.outcome === 'accepted') showToast('App installed!');
+          deferredPrompt = null;
+          installBtn.remove();
+        });
+      });
+      document.querySelector('.modal-actions').prepend(installBtn);
+    });
+
+    // Share/Transfer to Mobile functionality
+    const currentUrl = window.location.href;
+
+    // Share button
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'share-btn';
+    shareBtn.innerHTML = '📱 Send to Phone';
+    document.body.appendChild(shareBtn);
+
+    // Toast
+    const toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.textContent = 'Link copied to clipboard!';
+    document.body.appendChild(toast);
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2500);
+    }
+
+    // Modal
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+    modalOverlay.innerHTML = `
+      <div class="modal">
+        <h2>📱 Open on Your Phone</h2>
+        <p>Scan the QR code below with your phone camera, or use the buttons to share.</p>
+        <div class="qr-container" id="qr-code"></div>
+        <div class="modal-actions">
+          <button class="modal-btn primary" id="btn-copy">📋 Copy Link</button>
+          <button class="modal-btn" id="btn-share">📤 Share via System</button>
+          <button class="modal-btn" id="btn-email">✉️ Email to Myself</button>
+        </div>
+        <button class="modal-close" id="btn-close">Close</button>
+      </div>
+    `;
+    document.body.appendChild(modalOverlay);
+
+    shareBtn.addEventListener('click', () => {
+      modalOverlay.classList.add('active');
+      const qrEl = document.getElementById('qr-code');
+      if (!qrEl.hasChildNodes()) {
+        new QRCode(qrEl, {
+          text: currentUrl,
+          width: 180,
+          height: 180,
+          colorDark: '#1e293b',
+          colorLight: '#ffffff'
+        });
+      }
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) modalOverlay.classList.remove('active');
+    });
+
+    document.getElementById('btn-close').addEventListener('click', () => {
+      modalOverlay.classList.remove('active');
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      navigator.clipboard.writeText(currentUrl).then(() => {
+        showToast('Link copied! Paste in your phone browser.');
+      }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = currentUrl;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Link copied!');
+      });
+    });
+
+    document.getElementById('btn-share').addEventListener('click', () => {
+      if (navigator.share) {
+        navigator.share({
+          title: 'RV Trip: Issaquah to Mesa',
+          text: 'Interactive route map with dog-friendly stops',
+          url: currentUrl
+        });
+      } else {
+        showToast('Share not supported on this device. Use Copy Link instead.');
+      }
+    });
+
+    document.getElementById('btn-email').addEventListener('click', () => {
+      const subject = encodeURIComponent('RV Trip Map: Issaquah to Mesa');
+      const body = encodeURIComponent(`Here's our road trip map with all the dog-friendly stops:\n\n${currentUrl}\n\nDepart: Friday 2 PM from Issaquah\nArrive: Saturday ~11 PM in Mesa`);
+      window.open(`mailto:?subject=${subject}&body=${body}`);
+    });
+  </script>
+</body>
+</html>
